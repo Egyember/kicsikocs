@@ -6,7 +6,6 @@ import(
 	"fmt"
 	"flag"
 	"net/url"
-	"math"
 	"time"
 )
 
@@ -35,19 +34,11 @@ func (self *mouse) set(x int, y int){
 	self.old_x = self.current_x
 	self.old_y = self.current_y
 	robotgo.Move(x, y)
+	self.current_x, self.current_y = robotgo.Location()
 }
 
-type vector struct{
-	x int
-	y int
-};
-
-func (v *vector) vectorFromPoint(fromX, fromY, toX, toY int){
-	v.x = toX - fromX
-	v.y = toY - fromY
-}
-func (v *vector) length() int {
-	return int(math.Floor(math.Sqrt(math.Pow(float64(v.x), 2) + math.Pow(float64(v.y), 2))))
+func (self *mouse) difference()(int, int){
+	return self.current_x - self.old_x, self.current_y - self.old_y
 }
 
 func main(){
@@ -76,29 +67,29 @@ func main(){
 	cursor.set(*originX, *originY)
 	if *mapingType == 1 {
 		for{
-			//distence from origine
+			//distence from origin
 			cursor.update()
 			distenceX := cursor.current_x - *originX
 			angel := 90*distenceX/(sx/2)
 			fmt.Println(angel)
+			err := c.WriteMessage(websocket.TextMessage, []byte(string(angle)+ "\n"))
+			if err != nil {
+				panic(err)
+			}
 			time.Sleep(time.Duration(*rate) * time.Millisecond)
 		}
 	}else {
-		cursorVec := vector{x:0,y:0}
-		/*for{
+		for{
 			cursor.update()
-			cursorVec.vectorFromPoint(cursor.current_x, cursor.current_y, cursor.old_x, cursor.old_y)
-			var angle int
-			if cursor.current_x - cursor.old_x >0 {
-				angle = 90 * ((cursorVec.length()/ *maxSpeed))
-			} else{
-				angle = 90 * ((cursorVec.length()/ *maxSpeed)*-1)
+			diffX, diffY := cursor.difference()
+			angel := 90*(diffX / *maxSpeed)
+			fmt.Println(angel)
+			if cursor.current_x < sx/3 || cursor.current_x > sx-sx/3 {
+				cursor.set(*originX, *originY)
+				cursor.old_x = cursor.current_x + diffX
+				cursor.old_y = cursor.current_y + diffY
 			}
-			fmt.Println(angle)
 			time.Sleep(time.Duration(*rate) * time.Millisecond)
-			cursor.set(*originX, *originY)
 		}
-		*/
-		fmt.Println("work in progress")
 	}
 }
