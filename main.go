@@ -7,9 +7,11 @@ import(
 	"flag"
 	"net/url"
 	"time"
+	"strconv"
 )
 
 var targetIpString = flag.String("addr", "localhost", "server addres")
+var port = flag.Int("p", 81, "port number")
 var originX = flag.Int("x", -1, "origin mouse position")
 var originY = flag.Int("y", -1, "origin mouse position")
 var mapingType = flag.Int("mapping", 1, "mapping type of the mouse (1 position, 2 movement speed)")
@@ -44,8 +46,8 @@ func (self *mouse) difference()(int, int){
 func main(){
 	flag.Parse()
 	fmt.Println("hello word!")
-//	u, err := url.Parse(fmt.Sprintf("ws://%s:81", *targetIpString))
-	u, err := url.Parse("wss://echo.websocket.org/.sse")
+	u, err := url.Parse(fmt.Sprintf("ws://%s:%d", *targetIpString, *port))
+//	u, err := url.Parse("wss://echo.websocket.org/.sse")
 	if err != nil {
 		panic(err)
 	}
@@ -70,9 +72,9 @@ func main(){
 			//distence from origin
 			cursor.update()
 			distenceX := cursor.current_x - *originX
-			angel := 90*distenceX/(sx/2)
-			fmt.Println(angel)
-			err := c.WriteMessage(websocket.TextMessage, []byte(string(angle)+ "\n"))
+			angle := 90*distenceX/(sx/2)
+			fmt.Println(angle)
+			err := c.WriteMessage(websocket.TextMessage, []byte(strconv.Itoa(angle)+ "\n"))
 			if err != nil {
 				panic(err)
 			}
