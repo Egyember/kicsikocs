@@ -8,6 +8,7 @@ import(
 	"net/url"
 	"time"
 	"strconv"
+	"math"
 )
 
 var targetIpString = flag.String("addr", "localhost", "server addres")
@@ -17,6 +18,7 @@ var originY = flag.Int("y", -1, "origin mouse position")
 var mapingType = flag.Int("mapping", 1, "mapping type of the mouse (1 position, 2 movement speed)")
 var maxSpeed = flag.Int("maxSpeed", 100, "used for mapping type 2")
 var rate = flag.Int("rate", 50, "rate used for sampleing the mouse position in ms")
+var devider = flag.Int("devider", 50, "the value used for devideing the difference in the x axis in mapping mode 2")
 
 type mouse struct{
 	current_x int
@@ -84,7 +86,7 @@ func main(){
 		for{
 			cursor.update()
 			diffX, diffY := cursor.difference()
-			angel := 90*(diffX / *maxSpeed)
+			angel := math.Tan(float64(diffX/ *devider))* (180/math.Pi)
 			fmt.Println(angel)
 			if cursor.current_x < sx/3 || cursor.current_x > sx-sx/3 {
 				cursor.set(*originX, *originY)

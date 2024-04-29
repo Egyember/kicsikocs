@@ -3,10 +3,13 @@ module mouseToWebSocket
 go 1.22.2
 
 require (
+	github.com/go-vgo/robotgo v0.110.1
+	github.com/gorilla/websocket v1.5.1
+)
+
+require (
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-vgo/robotgo v0.110.1 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
