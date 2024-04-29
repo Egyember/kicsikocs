@@ -86,13 +86,14 @@ func main(){
 		for{
 			cursor.update()
 			diffX, diffY := cursor.difference()
-			angel := math.Tan(float64(diffX/ *devider))* (180/math.Pi)
-			fmt.Println(angel)
+			angle := math.Tan(float64(diffX/ *devider))* (180/math.Pi)
+			fmt.Println(angle)
 			if cursor.current_x < sx/3 || cursor.current_x > sx-sx/3 {
 				cursor.set(*originX, *originY)
 				cursor.old_x = cursor.current_x + diffX
 				cursor.old_y = cursor.current_y + diffY
 			}
+			err := c.WriteMessage(websocket.TextMessage, []byte(strconv.Itoa(angle)+ "\n"))
 			time.Sleep(time.Duration(*rate) * time.Millisecond)
 		}
 	}
