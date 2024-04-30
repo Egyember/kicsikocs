@@ -16,9 +16,7 @@ var port = flag.Int("p", 81, "port number")
 var originX = flag.Int("x", -1, "origin mouse position")
 var originY = flag.Int("y", -1, "origin mouse position")
 var mapingType = flag.Int("mapping", 1, "mapping type of the mouse (1 position, 2 movement speed)")
-var maxSpeed = flag.Int("maxSpeed", 100, "used for mapping type 2")
 var rate = flag.Int("rate", 50, "rate used for sampleing the mouse position in ms")
-var devider = flag.Int("devider", 50, "the value used for devideing the difference in the x axis in mapping mode 2")
 
 type mouse struct{
 	current_x int
@@ -83,10 +81,21 @@ func main(){
 			time.Sleep(time.Duration(*rate) * time.Millisecond)
 		}
 	}else {
+		maxVelocity := 0.0
 		for{
 			cursor.update()
 			diffX, diffY := cursor.difference()
-			angle := math.Tan(float64(diffX/ *devider))* (180/math.Pi)
+			// V = s/T
+			// T=50ms (rate)
+			//s = diffX
+			velocity := float64(diffX / *rate)
+			if velocity != 0 {
+				if math.Abs(velocity) > maxVelocity {maxVelocity = math.Abs(velocity)}
+			}
+			angle := -1
+			if maxVelocity != 0 {
+				angle = int(90 * velocity/maxVelocity)
+			}
 			fmt.Println(angle)
 			if cursor.current_x < sx/3 || cursor.current_x > sx-sx/3 {
 				cursor.set(*originX, *originY)
@@ -94,6 +103,9 @@ func main(){
 				cursor.old_y = cursor.current_y + diffY
 			}
 			err := c.WriteMessage(websocket.TextMessage, []byte(strconv.Itoa(angle)+ "\n"))
+			if err != nil {
+				panic(err)
+			}
 			time.Sleep(time.Duration(*rate) * time.Millisecond)
 		}
 	}
