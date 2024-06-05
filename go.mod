@@ -26,6 +26,7 @@ require (
 	github.com/vcaesar/imgo v0.40.0 // indirect
 	github.com/vcaesar/keycode v0.10.1 // indirect
 	github.com/vcaesar/tt v0.20.0 // indirect
+	github.com/veandco/go-sdl2 v0.4.40 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
