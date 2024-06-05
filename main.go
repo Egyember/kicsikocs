@@ -3,14 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
+	"github.com/veandco/go-sdl2/sdl"
 	"math"
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/go-vgo/robotgo"
-	"github.com/gorilla/websocket"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 var targetIpString = flag.String("addr", "localhost", "server addres")
@@ -25,31 +23,39 @@ type mouse struct {
 	current_y int
 	old_x     int
 	old_y     int
+	window    *sdl.Window
 }
 
 func (self *mouse) update() {
 	self.old_x = self.current_x
 	self.old_y = self.current_y
-	self.current_x, self.current_y = robotgo.Location()
-	fmt.Println("mouse update")
+	tx, ty, _ := sdl.GetMouseState()
+	self.current_x = int(tx)
+	self.current_y = int(ty)
 }
 
 func (self *mouse) set(x int, y int) {
 	self.old_x = self.current_x
 	self.old_y = self.current_y
-	robotgo.Move(x, y)
-	self.current_x, self.current_y = robotgo.Location()
+	self.window.WarpMouseInWindow(int32(x), int32(y))
+	tx, ty, _ := sdl.GetMouseState()
+	self.current_x = int(tx)
+	self.current_y = int(ty)
 }
 
 func (self *mouse) difference() (int, int) {
 	return self.current_x - self.old_x, self.current_y - self.old_y
 }
 
-func GetAngelfunc() func() int {
-	robotgo.MouseSleep = 0
-	cursor := mouse{current_x: 0, current_y: 0}
+func GetAngelfunc(window *sdl.Window) (func() int, error) {
+	cursor := mouse{current_x: 0, current_y: 0, window: window}
 	cursor.update()
-	sx, sy := robotgo.GetScreenSize()
+	dm, err := sdl.GetCurrentDisplayMode(0)
+	if err != nil {
+		return func() int { return 0 }, err
+	}
+	sx := int(dm.W)
+	sy := int(dm.H)
 	if *originX == -1 || *originY == -1 {
 		*originX = sx / 2
 		*originY = sy / 2
@@ -64,7 +70,7 @@ func GetAngelfunc() func() int {
 			angle := 90 * distenceX / (sx / 2)
 			//fmt.Println(angle)
 			return angle + 90
-		}
+		}, nil
 	} else {
 		maxVelocity := 0.0
 		return func() int {
@@ -90,15 +96,14 @@ func GetAngelfunc() func() int {
 				cursor.old_y = cursor.current_y + diffY
 			}
 			return angle + 90
-		}
+		}, nil
 	}
 }
 
 func main() {
 	flag.Parse()
 	fmt.Println("hello word!")
-	//	u, err := url.Parse(fmt.Sprintf("ws://%s:%d", *targetIpString, *port))
-	u, err := url.Parse("wss://echo.websocket.org/.sse")
+	u, err := url.Parse(fmt.Sprintf("ws://%s:%d", *targetIpString, *port))
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +115,13 @@ func main() {
 	}
 	defer c.Close()
 	sdl.Init(sdl.INIT_EVERYTHING)
-	window, err := sdl.CreateWindow("title", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, 300, 300, sdl.WINDOW_SHOWN)
+	defer sdl.Quit()
+	dm, err := sdl.GetCurrentDisplayMode(0)
+	if err != nil {
+		panic(err)
+	}
+	window, err := sdl.CreateWindow("title", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, dm.W, dm.H, sdl.WINDOW_SHOWN|sdl.WINDOW_MOUSE_CAPTURE)
+	window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
 	renderer, err := sdl.CreateRenderer(window, -1, 0)
 	err = renderer.SetDrawColor(0, 0, 0, 255)
 	err = renderer.Clear()
@@ -118,22 +129,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	angelUpdater := GetAngelfunc()
+	angleUpdate, err := GetAngelfunc(window)
+	if err != nil {
+		panic(err)
+	}
 	for {
-		sdl.PumpEvents()
+		start := time.Now()
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				return
+			default:
+				fmt.Printf("%T\n", event)
+			}
+		}
 		keyboard := sdl.GetKeyboardState()
 		direction := "s"
-		if keyboard[sdl.SCANCODE_W] || keyboard[sdl.SCANCODE_S] == true {
-			if keyboard[sdl.SCANCODE_W] == true {
+		if keyboard[sdl.SCANCODE_W] != keyboard[sdl.SCANCODE_S] {
+			if keyboard[sdl.SCANCODE_W] == uint8(1) {
 				direction = "f"
-			} else {
+			}
+			if keyboard[sdl.SCANCODE_S] == uint8(1) {
 				direction = "b"
 			}
 		}
-		err := c.WriteMessage(websocket.TextMessage, []byte(strconv.Itoa(angelUpdater())+";"+direction+"\r\n"))
+		angle := angleUpdate()
+		err := c.WriteMessage(websocket.TextMessage, []byte(strconv.Itoa(angle)+";"+direction+"\r\n"))
 		if err != nil {
 			panic(err)
 		}
-		time.Sleep(time.Duration(*rate) * time.Millisecond)
+		end := time.Now
+		time.Sleep((time.Duration(*rate) * time.Millisecond) - end.Sub(start))
 	}
 }
