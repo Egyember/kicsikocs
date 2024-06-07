@@ -160,6 +160,6 @@ func main() {
 		}
 		end := time.Now
   elapsed := end.Sub(start)
-		time.Sleep((time.Duration(*rate) * time.Millisecond) - elapsed)
+		time.Sleep((time.Duration(*rate) * time.Millisecond).Sub(elapsed))
 	}
 }
