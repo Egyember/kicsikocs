@@ -159,6 +159,7 @@ func main() {
 			panic(err)
 		}
 		end := time.Now
-		time.Sleep((time.Duration(*rate) * time.Millisecond) - end.Sub(start))
+  elapsed := end.Sub(sart)
+		time.Sleep((time.Duration(*rate) * time.Millisecond) - elapsed)
 	}
 }
