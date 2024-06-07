@@ -5,6 +5,8 @@
 #include "index.h"
 
 #define SERVO_PIN 26  // ESP32 pin GPIO26 connected to servo motor
+#define ELORE_PIN 
+#define HATRA_PIN
 
 Servo servo;
 
@@ -27,10 +29,26 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
       break;
     case WStype_TEXT:
       //Serial.printf("[%u] Received text: %s\n", num, payload);
-      String angle = String((char*)payload);
+      String input = String((char*)payload);
+      int sepInxex = input.indexOf(';');
+      String angel = input.substring(0, sepInxex);
+      String irany = input.substring(sepInxex+1);
       int angle_value = angle.toInt();
       Serial.println(angle_value);
       servo.write(angle_value);
+      if irany.equals("s"){
+        digitalWrite(ELORE_PIN, LOW);
+        digitalWrite(HATRA_PIN, LOW);
+      } else {
+        if irany.equals("f"){
+          digitalWrite(ELORE_PIN, HIGH);
+          digitalWrite(HATRA_PIN, LOW);
+        } else {
+          digitalWrite(ELORE_PIN, LOW);
+          digitalWrite(HATRA_PIN, HIGH);
+        };
+      };
+
       break;
   }
 }
@@ -61,6 +79,10 @@ void setup() {
   server.begin();
   Serial.print("ESP32 Web Server's IP address: ");
   Serial.println(WiFi.localIP());
+
+  //init elöre hatra
+  pinMode(ELORE_PIN, OUTPUT);
+  pinMode(HATRA_PIN, OUTPUT);
 }
 
 void loop() {
