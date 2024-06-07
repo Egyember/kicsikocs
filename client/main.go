@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/veandco/go-sdl2/sdl"
 	"math"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 var targetIpString = flag.String("addr", "localhost", "server addres")
@@ -121,14 +122,23 @@ func main() {
 		panic(err)
 	}
 	window, err := sdl.CreateWindow("title", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, dm.W, dm.H, sdl.WINDOW_SHOWN|sdl.WINDOW_MOUSE_CAPTURE)
-	window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
-	renderer, err := sdl.CreateRenderer(window, -1, 0)
-	err = renderer.SetDrawColor(0, 0, 0, 255)
-	err = renderer.Clear()
-	renderer.Present()
 	if err != nil {
 		panic(err)
 	}
+	window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
+	renderer, err := sdl.CreateRenderer(window, -1, 0)
+	if err != nil {
+		panic(err)
+	}
+	err = renderer.SetDrawColor(0, 0, 0, 255)
+	if err != nil {
+		panic(err)
+	}
+	err = renderer.Clear()
+	if err != nil {
+		panic(err)
+	}
+	renderer.Present()
 	angleUpdate, err := GetAngelfunc(window)
 	if err != nil {
 		panic(err)
@@ -158,8 +168,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		end := time.Now
-  elapsed := end.Sub(start)
-		time.Sleep((time.Duration(*rate) * time.Millisecond).Sub(elapsed))
+		err = renderer.Clear()
+		if err != nil {
+			panic(err)
+		}
+		elapsed := time.Since(start)
+		time.Sleep((time.Duration(*rate) * time.Millisecond) - elapsed)
 	}
 }
